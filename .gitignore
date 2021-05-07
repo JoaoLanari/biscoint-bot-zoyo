@@ -105,5 +105,5 @@ dist
 
 .idea
 
-config.json
+# config.json
 tmp/

@@ -1,0 +1,12 @@
+{
+  "apiKey": "3c6fd6e48e14298f3624cf8039dc17ddc5de47c711fb8b9b15a0d2768209089d",
+  "apiSecret": "dd69a047271b2d5068b5696584d0b002cfd98f55f7f2d134cfbf633aec5beb96",
+  "amount": 50,
+  "amountCurrency": "BRL",
+  "initialBuy": true,
+  "minProfitPercent": 0.02,
+  "intervalSeconds": null,
+  "playSound": false,
+  "simulation": true,
+  "executeMissedSecondLeg": true
+}
