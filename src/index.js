@@ -10,7 +10,7 @@ let {
 } = config;
 
 // global variables
-let bc, lastTrade = 0, isQuote, balances;
+let bc, lastTrade = 0, isQuote, balances, balanceWithProfit = 0;
 
 // Initializes the Biscoint API connector object.
 const init = () => {
@@ -43,7 +43,9 @@ const checkBalances = async () => {
   balances = await bc.balance();
   const { BRL, BTC } = balances;
 
-  handleMessage(`####### Balances:  BRL: ${BRL} - BTC: ${BTC} #######`);
+  balanceWithProfit = BRL;
+
+  handleMessage(` Balances:  BRL: ${BRL} - BTC: ${BTC} `);
 
   const nAmount = Number(amount);
   let amountBalance = isQuote ? BRL : BTC;
@@ -83,7 +85,7 @@ async function tradeCycle() {
   const tradeCycleStartedAt = Date.now();
 
   handleMessage(`[${tradeCycleCount}] Trade cycle started...`);
-  handleMessage(`[${tradeCycleCount} / ${positiveProfit}] ###################### Assertividade : ${(positiveProfit / tradeCycleCount) * 100} % ######################`);
+  handleMessage(`[${tradeCycleCount} / ${positiveProfit}] Assertividade : ${(positiveProfit / tradeCycleCount) * 100}% `);
 
   try {
 
@@ -114,6 +116,8 @@ async function tradeCycle() {
     const profit = percent(buyOffer.efPrice, sellOffer.efPrice);
     handleMessage(`[${tradeCycleCount}] Calculated profit: ${profit.toFixed(3)}%`);
 
+    handleMessage(`[${tradeCycleCount}] Amout + Profit: R$${amount} + ${profit.toFixed(3)}% = R$${Number(amount) + Number(amount * (profit.toFixed(3) / 100))}`);
+
     if (profit >= minProfitPercent) {
 
       positiveProfit++;
@@ -124,7 +128,8 @@ async function tradeCycle() {
         if (initialBuy) {
           firstOffer = buyOffer;
           secondOffer = sellOffer;
-        } else {
+        }
+        else {
           firstOffer = sellOffer;
           secondOffer = buyOffer;
         }
@@ -132,8 +137,9 @@ async function tradeCycle() {
         startedAt = Date.now();
 
         if (simulation) {
-          handleMessage(`####### [${tradeCycleCount}] Would execute arbitrage if simulation mode was not enabled #######`);
-        } else {
+          handleMessage(`[${tradeCycleCount}] Would execute arbitrage if simulation mode was not enabled `);
+        }
+        else {
           firstLeg = await bc.confirmOffer({
             offerId: firstOffer.offerId,
           });
@@ -146,6 +152,8 @@ async function tradeCycle() {
         finishedAt = Date.now();
 
         lastTrade = Date.now();
+
+        balanceWithProfit = Number(balanceWithProfit) + (Number(amount) + Number(amount * (profit.toFixed(3) / 100)));
 
         handleMessage(`[${tradeCycleCount}] Success, profit: + ${profit.toFixed(3)}% (${finishedAt - startedAt} ms)`);
         play();
@@ -161,12 +169,14 @@ async function tradeCycle() {
             const trades = await bc.trades({ op: secondOp });
             if (_.find(trades, t => t.offerId === secondOffer.offerId)) {
               handleMessage(`[${tradeCycleCount}] The second leg was executed despite of the error. Good!`);
-            } else if (!executeMissedSecondLeg) {
+            }
+            else if (!executeMissedSecondLeg) {
               handleMessage(
                 `[${tradeCycleCount}] Only the first leg of the arbitrage was executed, and the ` +
                 'executeMissedSecondLeg is false, so we won\'t execute the second leg.',
               );
-            } else {
+            }
+            else {
               handleMessage(
                 `[${tradeCycleCount}] Only the first leg of the arbitrage was executed. ` +
                 'Trying to execute it at a possible loss.',
@@ -191,6 +201,9 @@ async function tradeCycle() {
         }
       }
     }
+
+    handleMessage(`##### [${tradeCycleCount}] Amout With Profit: R$${Number(balanceWithProfit).toFixed(2)} #####`);
+
   } catch (error) {
     handleMessage(`[${tradeCycleCount}] Error on get offer: ${error.error || error.message}`, 'error');
     console.error(error);
